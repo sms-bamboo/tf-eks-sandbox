@@ -23,11 +23,7 @@ configs:
       p, role:developer, applications, get, */*, allow
       p, role:developer, applications, sync, */*, allow
       p, role:developer-readonly, applications, get, */*, allow
-      g, ezllabs_mgbaek, role:admin
-      g, ezllabs_jsg, role:admin
-      g, ezllabs_hoon, role:admin
-      g, ezllabs_sean, role:admin
-      g, ezllabs_chldudgh8256, role:developer
+      g, bamboo, role:admin
   secret:
     argocdServerAdminPassword: ${server_admin_password}
   params:
