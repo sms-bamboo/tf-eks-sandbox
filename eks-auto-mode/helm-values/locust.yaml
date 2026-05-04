@@ -1,0 +1,31 @@
+image:
+  tag: 2.29.1
+loadtest:
+  locust_locustfile_configmap: locustfile
+master:
+  resources:
+    limits:
+      cpu: 200m
+      memory: 512Mi
+    requests:
+      cpu: 100m
+      memory: 256Mi
+worker:
+  resources:
+    limits:
+      cpu: 500m
+      memory: 512Mi
+    requests:
+      cpu: 500m
+      memory: 256Mi
+  hpa:
+    enabled: true
+    maxReplicas: 100
+    targetCPUUtilizationPercentage: 70
+ingress:
+  enabled: true
+  className: nginx
+  hosts:
+  - host: ${hostname}
+    path: /
+    pathType: Prefix
