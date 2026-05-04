@@ -11,11 +11,7 @@ server:
     ingressClassName: nginx
 configs:
   cm:
-    accounts.ezllabs_mgbaek: apiKey, login
-    accounts.ezllabs_jsg: apiKey, login
-    accounts.ezllabs_hoon: login
-    accounts.ezllabs_sean: login
-    accounts.ezllabs_chldudgh8256: login
+    accounts.bamboo: apiKey, login
   rbac:
     policy.csv: |
       p, role:org-admin, applications, *, */*, allow
