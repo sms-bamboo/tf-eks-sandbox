@@ -68,6 +68,41 @@ resource "helm_release" "metrics_server" {
   namespace  = "kube-system"
 }
 
+# AWS LoadBalancer Controller - IngressClass 추가
+resource "kubernetes_manifest" "alb_ingress_class_params" {
+  manifest = {
+    apiVersion = "eks.amazonaws.com/v1"
+    kind       = "IngressClassParams"
+    metadata = {
+      name = "alb"
+    }
+    spec = {
+      scheme = "internet-facing"
+    }
+  }
+}
+
+resource "kubernetes_manifest" "alb_ingress_class" {
+  manifest = {
+    apiVersion = "networking.k8s.io/v1"
+    kind       = "IngressClass"
+    metadata = {
+      name = "alb"
+      annotations = {
+        "ingressclass.kubernetes.io/is-default-class" = "true"
+      }
+    }
+    spec = {
+      controller = "eks.amazonaws.com/alb"
+      parameters = {
+        apiGroup = "eks.amazonaws.com"
+        kind     = "IngressClassParams"
+        name     = "alb"
+      }
+    }
+  }
+}
+
 /*
 # Karpenter 기본 노드 클래스
 resource "kubectl_manifest" "karpenter_default_node_class" {

@@ -1,26 +1,3 @@
-# Ingress NGINX를 설치할 네임스페이스
-resource "kubernetes_namespace_v1" "ingress_nginx" {
-  metadata {
-    name = "ingress-nginx"
-  }
-}
-
-# Ingress NGINX
-resource "helm_release" "ingress_nginx" {
-  name       = "ingress-nginx"
-  repository = "https://kubernetes.github.io/ingress-nginx"
-  chart      = "ingress-nginx"
-  version    = var.ingress_nginx_chart_version
-  namespace  = kubernetes_namespace_v1.ingress_nginx.metadata[0].name
-
-  values = [
-    templatefile("${path.module}/helm-values/ingress-nginx.yaml", {
-      lb_acm_certificate_arn = aws_acm_certificate_validation.service_domain.certificate_arn
-      whitelist_source_range = join(",", local.whitelist_ip_range)
-    })
-  ]
-}
-
 # Argo CD를 설치할 네임스페이스
 resource "kubernetes_namespace_v1" "argocd" {
   metadata {
@@ -46,10 +23,6 @@ resource "helm_release" "argocd" {
       domain                            = "argocd.${local.service_domain_name}"
       server_admin_password             = htpasswd_password.argocd.bcrypt
     })
-  ]
-
-  depends_on = [
-    helm_release.ingress_nginx
   ]
 }
 
@@ -137,10 +110,6 @@ resource "helm_release" "prometheus" {
       grafana_admin_password            = jsondecode(data.aws_secretsmanager_secret_version.this.secret_string)["grafana"]["adminPassword"]
     })
   ]
-
-  depends_on = [
-    helm_release.ingress_nginx
-  ]
 }
 
 # Locust를 설치할 네임스페이스
@@ -162,10 +131,6 @@ resource "helm_release" "locust" {
     templatefile("${path.module}/helm-values/locust.yaml", {
       hostname = "locust.${local.service_domain_name}"
     })
-  ]
-
-  depends_on = [
-    helm_release.ingress_nginx
   ]
 }
 
