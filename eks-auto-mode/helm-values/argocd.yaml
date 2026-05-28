@@ -8,7 +8,7 @@ controller:
 server:
   ingress:
     enabled: true
-    ingressClassName: nginx
+    ingressClassName: alb
 configs:
   cm:
     accounts.bamboo: apiKey, login

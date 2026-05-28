@@ -24,7 +24,7 @@ worker:
     targetCPUUtilizationPercentage: 70
 ingress:
   enabled: true
-  className: nginx
+  className: alb
   hosts:
   - host: ${hostname}
     path: /

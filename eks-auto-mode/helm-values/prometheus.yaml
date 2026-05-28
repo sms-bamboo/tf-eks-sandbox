@@ -1,5 +1,11 @@
 fullnameOverride: kube-prometheus
 prometheus:
+  ingress:
+    enabled: true
+    ingressClassName: alb
+    pathType: Prefix
+    hosts:
+    - ${prometheus_hostname}
   serviceAccount:
     create: true
   prometheusSpec:
@@ -42,12 +48,12 @@ alertmanager:
     - name: infra
   ingress:
     enabled: true
-    ingressClassName: nginx
+    ingressClassName: alb
+    pathType: Prefix
     hosts:
     - ${alertmanager_hostname}
     annotations:
       nginx.ingress.kubernetes.io/auth-type: basic
-      nginx.ingress.kubernetes.io/auth-secret: ${alertmanager_password_secret_name}
   serviceMonitor:
     selfMonitor: false
   templateFiles:
@@ -136,9 +142,6 @@ grafana:
     enabled: true
     size: 20Gi
     storageClassName: ebs-sc
-  serviceAccount:
-    annotations:
-      eks.amazonaws.com/role-arn: ${grafana_role_arn}
   adminPassword: ${grafana_admin_password}
   resources:
     limits:
@@ -149,14 +152,15 @@ grafana:
       memory: 256Mi
   ingress:
     enabled: true
-    ingressClassName: nginx
+    ingressClassName: alb
+    pathType: Prefix
     hosts:
     - ${grafana_hostname}
   serviceMonitor:
     enabled: false
   sidecar:
     datasources:
-      defaultDatasourceEnabled: false
+      defaultDatasourceEnabled: true
   dashboardProviders:
     dashboardproviders.yaml:
       apiVersion: 1
@@ -171,10 +175,6 @@ grafana:
           path: /var/lib/grafana/dashboards/default
   dashboards:
     default:
-      ingress-nginx:
-        url: https://raw.githubusercontent.com/kubernetes/ingress-nginx/main/deploy/grafana/dashboards/nginx.json
-      ingress-nginx-request-handling-performance:
-        url: https://raw.githubusercontent.com/kubernetes/ingress-nginx/main/deploy/grafana/dashboards/request-handling-performance.json
       capacity-dashboard:
         url: https://karpenter.sh/preview/getting-started/getting-started-with-karpenter/karpenter-capacity-dashboard.json
       performance-dashboard:
