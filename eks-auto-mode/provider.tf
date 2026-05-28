@@ -4,27 +4,27 @@ terraform {
   required_providers {
     aws = {
       source  = "hashicorp/aws"
-      version = ">= 5.85.0"
+      version = ">= 6.40.0"
     }
     kubernetes = {
       source  = "hashicorp/kubernetes"
-      version = ">= 2.35.0"
+      version = ">= 3.0.0"
     }
     helm = {
       source  = "hashicorp/helm"
-      version = ">= 2.17.0"
+      version = ">= 3.1.0"
     }
     kubectl = {
       source  = "alekc/kubectl"
-      version = ">= 2.1.0"
+      version = ">= 2.3.0"
     }
     htpasswd = {
       source  = "loafoe/htpasswd"
-      version = ">= 1.2.1"
+      version = ">= 2.0.0"
     }
     http = {
       source  = "hashicorp/http"
-      version = ">= 3.4.5"
+      version = ">= 3.5.0"
     }
   }
 }
