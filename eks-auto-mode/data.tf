@@ -12,12 +12,17 @@ data "aws_eks_cluster_auth" "this" {
   name = module.eks.cluster_name
 }
 
-# 암호 정보가 저장된 Secrets
-data "aws_secretsmanager_secret_version" "this" {
-  secret_id = local.project
-}
+# secret manager 사용 시
+# data "aws_secretsmanager_secret_version" "this" {
+#  secret_id = local.project
+#}
 
 # Route53 호스트존
 data "aws_route53_zone" "this" {
   name = "${local.service_domain_name}."
+}
+
+# 내 IP 가져오기
+data "http" "my_ip" {
+  url = "https://checkip.amazonaws.com"
 }
