@@ -26,7 +26,7 @@ resource "aws_route53_record" "acm_validation_service_domain" {
   zone_id         = data.aws_route53_zone.this.zone_id
 }
 
-# 인증서 발급 상태
+# 인증서 발급 상태 확인
 resource "aws_acm_certificate_validation" "service_domain" {
   certificate_arn         = aws_acm_certificate.service_domain.arn
   validation_record_fqdns = [for record in aws_route53_record.acm_validation_service_domain : record.fqdn]
