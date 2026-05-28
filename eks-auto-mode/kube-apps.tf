@@ -5,9 +5,20 @@ resource "kubernetes_namespace_v1" "argocd" {
   }
 }
 
+# 테스트 용도 이외에는 외부 저장소(secret manager) 사용 권장
 # Argo CD 어드민 비밀번호의 bcrypt hash 생성
+# resource "htpasswd_password" "argocd" {
+#   password = jsondecode(data.aws_secretsmanager_secret_version.this.secret_string)["argocd"]["adminPassword"]
+# }
+
+resource "random_password" "argocd_admin_password" {
+  length           = 24
+  special          = true
+  override_special = "_%@"
+}
+
 resource "htpasswd_password" "argocd" {
-  password = jsondecode(data.aws_secretsmanager_secret_version.this.secret_string)["argocd"]["adminPassword"]
+  password = random_password.argocd_admin_password.result
 }
 
 # Argo CD
@@ -33,63 +44,10 @@ resource "kubernetes_namespace_v1" "prometheus" {
   }
 }
 
-# Grafana assume 정책 설정
-resource "aws_iam_policy" "grafana_account_access" {
-  name = "grafana-account-access"
-
-  policy = jsonencode({
-    Version = "2012-10-17"
-    Statement = [
-      {
-        Action = [
-          "sts:AssumeRole",
-        ]
-        Effect = "Allow"
-        Resource = [
-          "*"
-        ]
-      },
-    ]
-  })
-}
-
-module "grafana_irsa" {
-  source  = "terraform-aws-modules/iam/aws//modules/iam-role-for-service-accounts-eks"
-  version = "5.39.0"
-
-  role_name = "${module.eks.cluster_name}-cluster-grafana-role"
-
-  role_policy_arns = {
-    grafana_account_access = aws_iam_policy.grafana_account_access.arn
-  }
-
-  oidc_providers = {
-    grafana = {
-      provider_arn = module.eks.oidc_provider_arn
-      namespace_service_accounts = [
-        "monitoring:prometheus-grafana"
-      ]
-    }
-  }
-}
-
-# Alertmanager 접근 비밀번호
-resource "htpasswd_password" "alertmanager" {
-  password = jsondecode(data.aws_secretsmanager_secret_version.this.secret_string)["alertmanager"]["password"]
-}
-
-
-resource "kubernetes_secret_v1" "alertmanager" {
-  metadata {
-    name      = "alertmanager-password"
-    namespace = kubernetes_namespace_v1.prometheus.metadata[0].name
-  }
-
-  data = {
-    auth = "admin:${htpasswd_password.alertmanager.bcrypt}"
-  }
-
-  type = "Opaque"
+resource "random_password" "grafana_admin_password" {
+  length           = 24
+  special          = true
+  override_special = "_%@"
 }
 
 # Kube-prometheus-stack
@@ -103,11 +61,12 @@ resource "helm_release" "prometheus" {
   values = [
     templatefile("${path.module}/helm-values/prometheus.yaml", {
       cluster_name                      = module.eks.cluster_name
+      prometheus_hostname        = "prometheus.${local.service_domain_name}"
       alertmanager_hostname             = "alertmanager.${local.service_domain_name}"
       grafana_hostname                  = "grafana.${local.service_domain_name}"
-      grafana_role_arn                  = module.grafana_irsa.iam_role_arn
-      alertmanager_password_secret_name = kubernetes_secret_v1.alertmanager.metadata[0].name
-      grafana_admin_password            = jsondecode(data.aws_secretsmanager_secret_version.this.secret_string)["grafana"]["adminPassword"]
+      grafana_admin_password            = random_password.grafana_admin_password.result
+      # 테스트 용도 이외에는 외부 저장소(secret manager) 사용 권장
+      # grafana_admin_password            = jsondecode(data.aws_secretsmanager_secret_version.this.secret_string)["grafana"]["adminPassword"]
     })
   ]
 }
@@ -155,5 +114,37 @@ resource "kubernetes_config_map_v1" "locustfile" {
           def about(self):
               self.client.get("/about")
     EOT
+  }
+}
+
+# ExternalDNS
+resource "helm_release" "external_dns" {
+  name       = "external-dns"
+  repository = "https://kubernetes-sigs.github.io/external-dns"
+  chart      = "external-dns"
+  version    = var.external_dns_chart_version
+  namespace  = "kube-system"
+
+  values = [
+    templatefile("${path.module}/helm-values/external-dns.yaml", {
+      txtOwnerId = module.eks.cluster_name
+    })
+  ]
+}
+
+module "external_dns_pod_identity" {
+  source = "terraform-aws-modules/eks-pod-identity/aws"
+
+  name = "external-dns"
+
+  attach_external_dns_policy    = true
+  external_dns_hosted_zone_arns = [data.aws_route53_zone.this.arn]
+
+  associations = {
+    this = {
+      cluster_name    = module.eks.cluster_name
+      namespace       = "kube-system"
+      service_account = "external-dns"
+    }
   }
 }
