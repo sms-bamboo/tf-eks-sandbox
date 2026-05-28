@@ -14,7 +14,7 @@ module "eks" {
   }
 
   endpoint_public_access = true
-  endpoint_public_access_cidrs = ["0.0.0.0/0"]
+  endpoint_public_access_cidrs = ["${chomp(data.http.my_ip.response_body)}/32"]
 
   vpc_id     = module.vpc.vpc_id
   subnet_ids = module.vpc.private_subnets
@@ -68,39 +68,45 @@ resource "helm_release" "metrics_server" {
   namespace  = "kube-system"
 }
 
-# AWS LoadBalancer Controller - IngressClass 추가
-resource "kubernetes_manifest" "alb_ingress_class_params" {
-  manifest = {
-    apiVersion = "eks.amazonaws.com/v1"
-    kind       = "IngressClassParams"
-    metadata = {
-      name = "alb"
-    }
-    spec = {
-      scheme = "internet-facing"
-    }
-  }
+# AWS LoadBalancer Controller IngressClass
+resource "kubectl_manifest" "alb_ingress_class" {
+  yaml_body = <<-YAML
+  apiVersion: networking.k8s.io/v1
+  kind: IngressClass
+  metadata:
+    name: alb
+    annotations:
+      ingressclass.kubernetes.io/is-default-class: "true"
+  spec:
+    controller: eks.amazonaws.com/alb
+    parameters:
+      apiGroup: eks.amazonaws.com
+      kind: IngressClassParams
+      name: alb
+    YAML
+
+  depends_on = [
+    module.eks
+  ]
 }
 
-resource "kubernetes_manifest" "alb_ingress_class" {
-  manifest = {
-    apiVersion = "networking.k8s.io/v1"
-    kind       = "IngressClass"
-    metadata = {
-      name = "alb"
-      annotations = {
-        "ingressclass.kubernetes.io/is-default-class" = "true"
-      }
-    }
-    spec = {
-      controller = "eks.amazonaws.com/alb"
-      parameters = {
-        apiGroup = "eks.amazonaws.com"
-        kind     = "IngressClassParams"
-        name     = "alb"
-      }
-    }
-  }
+resource "kubectl_manifest" "alb_ingress_class_params" {
+  yaml_body = <<-YAML
+    apiVersion: eks.amazonaws.com/v1
+    kind: IngressClassParams
+    metadata:
+      name: alb
+    spec:
+      certificateARNs: 
+      - ${aws_acm_certificate.service_domain.arn}
+      scheme: internet-facing
+      group:
+        name: kube-apps
+    YAML
+
+  depends_on = [
+    module.eks
+  ]
 }
 
 /*
