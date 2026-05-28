@@ -14,11 +14,6 @@ variable "eks_cluster_endpoint_public_access" {
   type        = bool
 }
 
-variable "eks_node_ami_id" {
-  description = "EKS 노드 AMI ID"
-  type        = string
-}
-
 variable "metrics_server_chart_version" {
   description = "Kubernetes Metrics Server Helm 차트 버전"
   type        = string
@@ -26,11 +21,6 @@ variable "metrics_server_chart_version" {
 
 variable "external_dns_chart_version" {
   description = "Kubernetes ExternalDNS Helm 차트 버전"
-  type        = string
-}
-
-variable "ingress_nginx_chart_version" {
-  description = "Ingess-nginx Controller Helm 차트 버전 "
   type        = string
 }
 
