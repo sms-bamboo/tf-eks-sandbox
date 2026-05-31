@@ -1,0 +1,6 @@
+serviceAccount:
+  create: true
+txtOwnerId: ${txtOwnerId}
+policy: sync
+extraArgs:
+- --annotation-filter=external-dns.alpha.kubernetes.io/exclude notin (true)
