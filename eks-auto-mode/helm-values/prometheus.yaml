@@ -6,6 +6,14 @@ prometheus:
     pathType: Prefix
     hosts:
     - ${prometheus_hostname}
+  thanosService:
+    enabled: true
+  thanosIngress:
+    enabled: true
+    ingressClassName: alb
+    pathType: Prefix
+    hosts:
+    - ${thanos_hostname}
   serviceAccount:
     create: true
   prometheusSpec:
@@ -25,6 +33,14 @@ prometheus:
           resources:
             requests:
               storage: 20Gi
+    thanos:
+      objectStorageConfig:
+        secret:
+          type: "S3"
+          config:
+            endpoint: "s3.ap-northeast-2.amazonaws.com"
+            bucket: ${thanos_bucket}
+            aws_sdk_auth: false
     serviceMonitorSelectorNilUsesHelmValues: false
     podMonitorSelectorNilUsesHelmValues: false
     ruleSelectorNilUsesHelmValues: false

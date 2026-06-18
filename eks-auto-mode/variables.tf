@@ -34,6 +34,11 @@ variable "kube_prometheus_stack_chart_version" {
   type        = string
 }
 
+variable "thanos_chart_version" {
+  description = "Thanos Helm 차트 버전 "
+  type        = string
+}
+
 variable "kubecost_chart_version" {
   description = "Kubecost Helm 차트 버전 "
   type        = string
